@@ -6,9 +6,11 @@ StoryLoom is an all-in-one AI platform designed specifically to bridge the digit
 
 ---
 
-## 📽️ Project Demo
+## Project Demo
 See how StoryLoom transforms a simple craft into a global brand:  
-**[Watch the Demo Video Here](C:\Users\madee\OneDrive\Desktop\StoryLoom\StoryLoom.mp4)**
+<video src="./StoryLoom.mp4" controls width="100%"></video>
+
+**[Watch the Demo Video Here](./StoryLoom.mp4)**
 
 ---
 
