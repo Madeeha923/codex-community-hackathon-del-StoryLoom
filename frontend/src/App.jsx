@@ -63,7 +63,7 @@ function App() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [result, previewIndex, isPreviewPlaying, videoPreviewUrl]);
+  }, [result, previewIndex, isPreviewPlaying]);
 
   function handleTextChange(event) {
     const { value } = event.target;
@@ -274,9 +274,6 @@ function App() {
   }
 
   const generatedImages = result?.images || [];
-  const uploadReadyData = result?.upload_ready_data || {};
-  const stageLogs = result?.stage_logs || [];
-  const pipelineErrors = result?.pipeline_errors || [];
   const activePreviewImage =
     generatedImages[previewIndex] || generatedImages[0] || null;
   const totalPreviewDuration = generatedImages.reduce(
@@ -385,29 +382,19 @@ function App() {
           </form>
 
           <div className="results-column">
-            <section className="studio-panel overview-panel">
+            <section className="studio-panel narrative-panel">
               <SectionHeading
-                title="Generation Overview"
-                subtitle="A live view of the listing state, visual output, and final marketplace readiness."
+                title={result?.product_title || "Product Description"}
+                subtitle="Your generated listing appears first in a clean reading format."
               />
 
-              <div className="metric-grid">
-                <MetricCard
-                  label="Pipeline"
-                  value={result?.pipeline_status || "idle"}
-                  tone={result?.pipeline_status || "idle"}
-                />
-                <MetricCard
-                  label="Images"
-                  value={generatedImages.length ? `${generatedImages.length} ready` : "waiting"}
-                  tone={generatedImages.length ? "success" : "idle"}
-                />
-                <MetricCard
-                  label="Upload"
-                  value={result?.ready_for_upload ? "ready" : "pending"}
-                  tone={result?.ready_for_upload ? "success" : "partial"}
-                />
-              </div>
+              <article className="copy-card">
+                <span className="copy-label">Product Description</span>
+                <p>
+                  {result?.product_description ||
+                    "The generated product description will appear here as a polished paragraph."}
+                </p>
+              </article>
             </section>
 
             <section className="studio-panel gallery-panel">
@@ -420,8 +407,8 @@ function App() {
                 {generatedImages.length ? (
                   generatedImages.map((image) => (
                     <figure className="gallery-card" key={image.scene_number}>
-                      <img
-                        src={resolveImageSrc(image)}
+                      <GeneratedImage
+                        image={image}
                         alt={image.scene_title || `Scene ${image.scene_number}`}
                       />
                       <figcaption>
@@ -444,8 +431,8 @@ function App() {
 
               {generatedImages.length ? (
                 <div className="fallback-player-card">
-                  <img
-                    src={resolveImageSrc(activePreviewImage)}
+                  <GeneratedImage
+                    image={activePreviewImage}
                     alt={
                       activePreviewImage?.scene_title || "Generated preview frame"
                     }
@@ -508,31 +495,6 @@ function App() {
               )}
             </section>
 
-            <section className="studio-panel narrative-panel">
-              <SectionHeading
-                title={result?.product_title || "Listing Narrative"}
-                subtitle="Your product story and ad script are arranged side by side for a cleaner review."
-              />
-
-              <div className="copy-grid">
-                <article className="copy-card">
-                  <span className="copy-label">Product Description</span>
-                  <p>
-                    {result?.product_description ||
-                      "The generated product description will appear here as a polished paragraph."}
-                  </p>
-                </article>
-
-                <article className="copy-card">
-                  <span className="copy-label">Video Script</span>
-                  <p>
-                    {result?.video_script ||
-                      "The short ad script will appear here after the campaign is generated."}
-                  </p>
-                </article>
-              </div>
-            </section>
-
             <section className="studio-panel upload-panel">
               <SectionHeading
                 title="Final Upload"
@@ -576,60 +538,6 @@ function App() {
                 </div>
               ) : null}
             </section>
-
-            <section className="studio-panel technical-panel">
-              <details>
-                <summary className="details-summary">
-                  Technical Details
-                </summary>
-
-                <div className="technical-grid">
-                  <div className="technical-block">
-                    <h3>Upload Package</h3>
-                    <pre className="json-viewer">
-                      {JSON.stringify(uploadReadyData, null, 2) || "{}"}
-                    </pre>
-                  </div>
-
-                  <div className="technical-block">
-                    <h3>Pipeline Logs</h3>
-                    <div className="log-list">
-                      {stageLogs.length ? (
-                        stageLogs.map((log, index) => (
-                          <div className="log-item" key={`${log.stage}-${index}`}>
-                            <strong>{log.stage}</strong>
-                            <span>
-                              {log.event} / {log.status}
-                            </span>
-                            <small>{log.duration_ms} ms</small>
-                          </div>
-                        ))
-                      ) : (
-                        <EmptyState text="Stage logs will appear here." />
-                      )}
-                    </div>
-
-                    <h3 className="error-title">Pipeline Errors</h3>
-                    <div className="log-list">
-                      {pipelineErrors.length ? (
-                        pipelineErrors.map((item, index) => (
-                          <div
-                            className="log-item error-item"
-                            key={`${item.stage}-${index}`}
-                          >
-                            <strong>{item.stage}</strong>
-                            <span>{item.message}</span>
-                            <small>{item.status}</small>
-                          </div>
-                        ))
-                      ) : (
-                        <EmptyState text="No pipeline errors reported." />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </section>
           </div>
         </section>
       </main>
@@ -671,12 +579,6 @@ function resolveRecordingMimeType() {
   return "";
 }
 
-function wait(durationMs) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, durationMs);
-  });
-}
-
 function cleanupObjectUrl(url) {
   if (url) {
     URL.revokeObjectURL(url);
@@ -699,20 +601,34 @@ function resolveImageSrc(image) {
   return imageBase64 ? `data:image/png;base64,${imageBase64}` : "";
 }
 
+function GeneratedImage({ image, alt }) {
+  const imageUrl = String(image?.image_url || "").trim();
+  const imageBase64 = String(image?.frame_image_b64 || "").trim();
+  const fallbackSrc = imageBase64 ? `data:image/png;base64,${imageBase64}` : "";
+  const [src, setSrc] = useState(resolveImageSrc(image));
+
+  useEffect(() => {
+    setSrc(resolveImageSrc(image));
+  }, [imageUrl, imageBase64]);
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => {
+        if (fallbackSrc && src !== fallbackSrc) {
+          setSrc(fallbackSrc);
+        }
+      }}
+    />
+  );
+}
+
 function SectionHeading({ title, subtitle }) {
   return (
     <div className="section-heading">
       <h2>{title}</h2>
       <p>{subtitle}</p>
-    </div>
-  );
-}
-
-function MetricCard({ label, value, tone }) {
-  return (
-    <div className={`metric-tile tone-${tone || "idle"}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
     </div>
   );
 }

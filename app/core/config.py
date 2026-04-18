@@ -9,6 +9,15 @@ class Settings(BaseSettings):
     app_version: str = Field(default="0.1.0")
     api_v1_prefix: str = Field(default="/api/v1")
     debug: bool = Field(default=True, alias="APP_DEBUG")
+    cors_origins: str = Field(
+        default=(
+            "http://localhost:3000,"
+            "http://127.0.0.1:3000,"
+            "http://localhost:5173,"
+            "http://127.0.0.1:5173"
+        ),
+        alias="CORS_ORIGINS",
+    )
     host: str = Field(default="127.0.0.1")
     port: int = Field(default=8000)
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
@@ -26,6 +35,13 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    def get_cors_origins(self) -> list[str]:
+        return [
+            item.strip()
+            for item in self.cors_origins.split(",")
+            if item and item.strip()
+        ]
 
 
 @lru_cache

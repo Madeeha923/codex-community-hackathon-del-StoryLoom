@@ -63,3 +63,18 @@ Once the server is running, open:
 - The `pipeline` package is intended for workflow orchestration and automation logic.
 - The `services` package includes shared integrations such as the OpenAI client setup.
 
+## Vercel Deployment
+
+This repository is easiest to deploy to Vercel as two projects:
+
+1. Backend project
+   - Import the repository into Vercel
+   - Set the Root Directory to the repository root
+   - Add environment variables from `.env.example`
+   - Set `CORS_ORIGINS` to include your deployed frontend URL
+
+2. Frontend project
+   - Import the same repository again
+   - Set the Root Directory to `frontend`
+   - Add `VITE_API_BASE_URL` using `frontend/.env.example`
+   - Point it to your deployed backend URL
